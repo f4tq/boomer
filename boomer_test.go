@@ -44,6 +44,25 @@ func TestNewStandaloneBoomer(t *testing.T) {
 		t.Error("mode should be StandaloneMode")
 	}
 }
+func TestNewNamedBoomer(t *testing.T) {
+	b := NewNamedBoomer("0.0.0.0", 10,"foobarslaveid")
+	count := int64(0)
+	taskA := &Task{
+		Name: "increaseCount",
+		Fn: func() {
+			atomic.AddInt64(&count, 1)
+			runtime.Goexit()
+		},
+	}
+	go b.Run(taskA)
+
+	time.Sleep(5 * time.Second)
+
+	if b.slaveRunner.nodeID != "foobarslaveid" {
+		t.Error("nodeID should be foobarslaveid")
+	}
+	b.Quit()
+}
 
 func TestSetRateLimiter(t *testing.T) {
 	b := NewStandaloneBoomer(100, 10)

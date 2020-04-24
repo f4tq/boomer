@@ -47,6 +47,7 @@ type Boomer struct {
 	memoryProfileDuration time.Duration
 
 	outputs []Output
+	SlaveId string
 }
 
 // NewBoomer returns a new Boomer.
@@ -57,7 +58,16 @@ func NewBoomer(masterHost string, masterPort int) *Boomer {
 		mode:       DistributedMode,
 	}
 }
+// NewBoomer returns a new Boomer.
+func NewNamedBoomer(masterHost string, masterPort int , slaveID string ) *Boomer {
+	return &Boomer{
+		masterHost: masterHost,
+		masterPort: masterPort,
+		mode:       DistributedMode,
+		SlaveId: slaveID,
 
+	}
+}
 // NewStandaloneBoomer returns a new Boomer, which can run without master.
 func NewStandaloneBoomer(hatchCount int, hatchRate float64) *Boomer {
 	return &Boomer{
@@ -120,6 +130,9 @@ func (b *Boomer) Run(tasks ...*Task) {
 	switch b.mode {
 	case DistributedMode:
 		b.slaveRunner = newSlaveRunner(b.masterHost, b.masterPort, tasks, b.rateLimiter)
+		if len(b.SlaveId) > 0 {
+			b.slaveRunner.nodeID = b.SlaveId
+		}
 		for _, o := range b.outputs {
 			b.slaveRunner.addOutput(o)
 		}
