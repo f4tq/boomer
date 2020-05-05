@@ -4,9 +4,9 @@ package boomer
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/zeromq/goczmq"
+	"log"
+	"time"
 )
 
 type czmqSocketClient struct {
@@ -114,9 +114,23 @@ func (c *czmqSocketClient) sendMessage(msg *message) {
 		log.Printf("Msgpack encode fail: %v\n", err)
 		return
 	}
-	err = c.dealerSocket.SendFrame(serializedMessage, goczmq.FlagNone)
-	if err != nil {
-		log.Printf("Error sending: %v\n", err)
+	retries :=0
+
+	for {
+		err = c.dealerSocket.SendFrame(serializedMessage, goczmq.FlagNone)
+		if err != nil {
+			retries++
+			if retries > 3 {
+				log.Printf("Error sending after #{retries} retries #{err}\n")
+				break
+			}
+			time.Sleep(time.Millisecond * 5)
+			continue
+		}
+		break
+	}
+	if retries > 0 && err == nil{
+		log.Printf("sendMessage succeeded after #{retries} retries\n")
 	}
 }
 
